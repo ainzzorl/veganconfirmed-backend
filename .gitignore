@@ -38,3 +38,6 @@ ui-debug.log
 
 # scripts/fetch_geoip.sh
 /data/
+
+# Terraform (terraform/.terraform.lock.hcl is committed)
+.terraform/

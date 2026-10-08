@@ -1,4 +1,4 @@
-.PHONY: run-local-remote run-local run-prod deploy-service deploy-weekly-report deploy-db-viewer geoip
+.PHONY: run-local-remote run-local run-prod deploy-service deploy-weekly-report deploy-db-viewer geoip tf-init tf-plan tf-apply
 
 # Project id for the local Firestore emulator. It matches the one desktop-server's
 # tooling uses (its `make emulator`, tests/integration/run.sh), so a locally
@@ -52,6 +52,28 @@ deploy-weekly-report: $(ENV_FILE)
 # The database viewer on Cloud Run, behind Google sign-in (viewer_main.py).
 deploy-db-viewer: $(ENV_FILE)
 	set -a && . ./$(ENV_FILE) && set +a && ./scripts/deploy_db_viewer.sh
+
+# Infrastructure (terraform/): everything but the functions and Cloud Run
+# services the deploy targets above deploy. State lives in the
+# $PROJECT_ID-tfstate bucket, which tf-init creates the first time: Terraform
+# can't create its own backend, so gcloud does, and Terraform adopts it.
+TF := terraform -chdir=terraform
+TF_ENV := set -a && . ./$(ENV_FILE) && set +a && export TF_VAR_project_id="$$PROJECT_ID"
+
+tf-init: $(ENV_FILE)
+	$(TF_ENV) && bucket="gs://$$PROJECT_ID-tfstate" && \
+	if ! gcloud storage buckets describe "$$bucket" --project="$$PROJECT_ID" > /dev/null 2>&1; then \
+		gcloud storage buckets create "$$bucket" --project="$$PROJECT_ID" --location=us-central1 \
+			--uniform-bucket-level-access --public-access-prevention && \
+		gcloud storage buckets update "$$bucket" --versioning; \
+	fi && \
+	$(TF) init -backend-config="bucket=$$PROJECT_ID-tfstate"
+
+tf-plan: $(ENV_FILE)
+	$(TF_ENV) && $(TF) plan
+
+tf-apply: $(ENV_FILE)
+	$(TF_ENV) && $(TF) apply
 
 $(ENV_FILE):
 	@echo "Error: $(ENV_FILE) not found. Copy env.example to $(ENV_FILE) and fill it in." >&2; exit 1

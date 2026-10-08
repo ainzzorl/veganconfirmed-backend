@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Deploy the database viewer (viewer_main.py) to Cloud Run, behind Google
-# sign-in. One-time console setup, before the first run:
+# sign-in. Its service account and secrets come from terraform/ (`make
+# tf-apply`). One-time console setup, before the first run:
 #   1. APIs & Services > OAuth consent screen: External, left in Testing, with
 #      only the DB_VIEWER_ALLOWED_EMAILS accounts as test users.
 #   2. Credentials > OAuth client ID (Web application). Put its ID in .env as
@@ -30,41 +31,34 @@ for name in PROJECT_ID GOOGLE_OAUTH_CLIENT_ID DB_VIEWER_ALLOWED_EMAILS; do
 done
 SA="$SA_NAME@$PROJECT_ID.iam.gserviceaccount.com"
 
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
-    artifactregistry.googleapis.com secretmanager.googleapis.com \
-    --project="$PROJECT_ID"
+for secret in "$CLIENT_SECRET_NAME" "$SESSION_KEY_NAME"; do
+    if ! gcloud secrets describe "$secret" --project="$PROJECT_ID" &> /dev/null; then
+        echo "❌ Error: secret $secret doesn't exist; run make tf-apply first"
+        exit 1
+    fi
+done
 
-# The viewer's own identity, which can only read Firestore.
-if ! gcloud iam service-accounts describe "$SA" --project="$PROJECT_ID" &> /dev/null; then
-    gcloud iam service-accounts create "$SA_NAME" --project="$PROJECT_ID" \
-        --display-name="Database viewer (read-only)"
-fi
-gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member="serviceAccount:$SA" --role=roles/datastore.viewer \
-    --condition=None --quiet > /dev/null
-
-# create_secret NAME: creates it from stdin unless it already exists.
-create_secret() {
-    if gcloud secrets describe "$1" --project="$PROJECT_ID" &> /dev/null; then
+# Terraform creates the secrets empty; fill_secret NAME gives one its first
+# value from stdin unless it already has one.
+has_value() {
+    [ -n "$(gcloud secrets versions list "$1" --project="$PROJECT_ID" \
+        --filter=state=ENABLED --limit=1 --format='value(name)')" ]
+}
+fill_secret() {
+    if has_value "$1"; then
         cat > /dev/null
     else
-        gcloud secrets create "$1" --project="$PROJECT_ID" --data-file=-
+        gcloud secrets versions add "$1" --project="$PROJECT_ID" --data-file=-
     fi
 }
-if ! gcloud secrets describe "$CLIENT_SECRET_NAME" --project="$PROJECT_ID" &> /dev/null \
-    && [ -z "$GOOGLE_OAUTH_CLIENT_SECRET" ]; then
-    echo "❌ Error: secret $CLIENT_SECRET_NAME doesn't exist yet; set GOOGLE_OAUTH_CLIENT_SECRET to create it"
+if ! has_value "$CLIENT_SECRET_NAME" && [ -z "$GOOGLE_OAUTH_CLIENT_SECRET" ]; then
+    echo "❌ Error: secret $CLIENT_SECRET_NAME has no value yet; set GOOGLE_OAUTH_CLIENT_SECRET to add it"
     exit 1
 fi
-printf %s "$GOOGLE_OAUTH_CLIENT_SECRET" | create_secret "$CLIENT_SECRET_NAME"
-# Signs session cookies. Delete the secret and redeploy to sign everyone out.
+printf %s "$GOOGLE_OAUTH_CLIENT_SECRET" | fill_secret "$CLIENT_SECRET_NAME"
+# Signs session cookies. Disable its versions and redeploy to sign everyone out.
 python3 -c "import secrets; print(secrets.token_hex(32), end='')" \
-    | create_secret "$SESSION_KEY_NAME"
-for secret in "$CLIENT_SECRET_NAME" "$SESSION_KEY_NAME"; do
-    gcloud secrets add-iam-policy-binding "$secret" --project="$PROJECT_ID" \
-        --member="serviceAccount:$SA" --role=roles/secretmanager.secretAccessor \
-        --quiet > /dev/null
-done
+    | fill_secret "$SESSION_KEY_NAME"
 
 # Public URL on purpose: viewer_main.py does the sign-in and refuses to start
 # without an allowlist. The ^;^ prefix makes ";" the separator, since the

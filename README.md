@@ -37,13 +37,30 @@ Which provider serves a request, and which is the fallback, is decided by
 | --- | --- |
 | `make deploy-service` | The analysis function, `vegassist-analyze`. Only from a branch named `release/YYYYMMDD/<number>`. |
 | `make deploy-weekly-report` | The weekly usage report email, a private function run by Cloud Scheduler. |
+| `make deploy-db-viewer` | The database viewer on Cloud Run, behind Google sign-in. |
 
-Both read their settings from `.env`. Cloud Functions installs from
+All of them read their settings from `.env`. Cloud Functions installs from
 `requirements.txt`, not `uv.lock`, so refresh it after changing dependencies:
 
 ```bash
 uv export --no-dev --no-hashes --no-emit-project --output-file requirements.txt
 ```
+
+### Infrastructure
+
+Everything else in GCP (APIs, service accounts and their IAM, the viewer's
+secrets, the scheduler job, Firestore) is Terraform, in
+[`terraform/`](terraform/), with its state in the `$PROJECT_ID-tfstate` bucket.
+
+| Command | What it does |
+| --- | --- |
+| `make tf-init` | Creates the state bucket if needed, then `terraform init`. |
+| `make tf-plan` | Shows what would change. |
+| `make tf-apply` | Applies it, after a confirmation prompt. |
+
+The scheduler job reads the weekly report function's URL and the viewer needs
+its secrets, so on a fresh project the order is: `make tf-init`,
+`make deploy-weekly-report`, `make tf-apply`, then the other deploy targets.
 
 ## API
 
