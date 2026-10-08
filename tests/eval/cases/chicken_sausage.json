@@ -1,0 +1,19 @@
+{
+  "url": "https://www.amazon.com/Applegate-Naturals-Chicken-Breakfast-Sausage/dp/B0DQXZ1G9H",
+  "title": "Applegate Naturals Chicken & Maple Breakfast Sausage Links Family Size",
+  "category": "food",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": false,
+    "is_cruelty_free": null,
+    "ingredients": {
+      "explicit": [
+        "chicken",
+        "maple",
+        "cane sugar"
+      ]
+    }
+  },
+  "notes": "Chicken sausage."
+}

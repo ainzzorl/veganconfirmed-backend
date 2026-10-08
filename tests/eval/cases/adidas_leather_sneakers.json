@@ -1,0 +1,19 @@
+{
+  "url": "https://www.amazon.com/adidas-Unisex-Samba-Sneaker-White/dp/B0CKML7GV9",
+  "title": null,
+  "category": "clothing",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": false,
+    "is_cruelty_free": null,
+    "ingredients": {
+      "explicit": [
+        "leather",
+        "suede",
+        "rubber"
+      ]
+    }
+  },
+  "notes": "Sneakers with leather."
+}

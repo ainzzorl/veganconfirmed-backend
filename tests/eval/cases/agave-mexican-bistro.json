@@ -1,0 +1,23 @@
+{
+  "url": "https://agavemxbistro.com/mountain-view-agave-mexican-bistro-food-menu",
+  "title": "Agave Mexican Bistro - Food Menu",
+  "category": "restaurant",
+  "expect": {
+    "page_kind": "restaurant_menu",
+    "is_shopping_item": false,
+    "is_vegan": null,
+    "vegan_friendliness": ["medium", "low"],
+    "menu": {
+      "restaurant_name": "Agave Mexican Bistro",
+      "dishes": [
+        { "name": "Guacamole", "verdict": ["vegan"] },
+        { "name": "Veggie Burrito", "verdict": ["vegan", "likely_vegan"] },
+        { "name": "Tacos De La Calle", "verdict": "veganizable" },
+        { "name": "Calamari", "verdict": "not_vegan" },
+        { "name": "Quesadilla", "verdict": "not_vegan" },
+        { "name": "Enchiladas Suizas", "verdict": "not_vegan" },
+        { "name": "Chile Relleno", "verdict": "not_vegan" }
+      ]
+    }
+  }
+}

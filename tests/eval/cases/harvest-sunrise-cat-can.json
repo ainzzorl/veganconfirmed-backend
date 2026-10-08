@@ -1,0 +1,20 @@
+{
+  "url": "https://www.weruva.com/products/soulistic-originals-harvest-sunrise-cat-can?variant=51578531086610",
+  "title": null,
+  "category": "food",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": false,
+    "is_cruelty_free": null,
+    "ingredients": {
+      "explicit": [
+        "chicken",
+        "chicken broth",
+        "pumpkin",
+        "taurine"
+      ]
+    }
+  },
+  "notes": "Cat food with chicken."
+}

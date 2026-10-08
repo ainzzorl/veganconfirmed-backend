@@ -1,0 +1,21 @@
+{
+  "url": "https://pos.chowbus.com/online-ordering/store/restaurant/22772",
+  "title": "Merit Vegan Restaurant",
+  "category": "restaurant",
+  "expect": {
+    "page_kind": "restaurant_menu",
+    "is_shopping_item": false,
+    "is_vegan": null,
+    "vegan_friendliness": ["high"],
+    "menu": {
+      "restaurant_name": "Merit Vegan Restaurant",
+      "dishes": [
+        { "name": "Wonton Soup", "verdict": ["vegan"] },
+        { "name": "Chow Mein", "verdict": ["vegan"] },
+        { "name": "Curry Fried Rice", "verdict": ["vegan"] },
+        { "name": "Pad Thai", "verdict": ["vegan"] }
+      ]
+    }
+  },
+  "notes": "Fully vegan restaurant."
+}

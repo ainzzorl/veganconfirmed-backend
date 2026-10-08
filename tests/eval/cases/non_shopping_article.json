@@ -1,0 +1,12 @@
+{
+  "url": "https://news.example.com/article",
+  "title": null,
+  "category": "non_shopping",
+  "expect": {
+    "page_kind": "other",
+    "is_shopping_item": false,
+    "is_vegan": null,
+    "is_cruelty_free": null
+  },
+  "notes": "News article, not a product; bootstrapped from the integ test."
+}

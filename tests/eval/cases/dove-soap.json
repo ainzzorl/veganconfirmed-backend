@@ -1,0 +1,22 @@
+{
+  "url": "https://www.amazon.com/Dove-Beauty-Bar-White/dp/B00I69SEK0?th=1",
+  "title": "Dove Beauty Bar Soap Original 8 Count for Soft, Smooth Skin, with 1/4 Moisturizing Cream 3.75 oz",
+  "category": "toiletries",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": false,
+    "is_cruelty_free": true,
+    "ingredients": {
+      "explicit": [
+        "tallow",
+        [
+          "stearate",
+          "stearic"
+        ],
+        "palm"
+      ]
+    }
+  },
+  "notes": "Soap. PETA approved, does not test on animals."
+}

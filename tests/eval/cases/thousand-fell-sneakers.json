@@ -1,0 +1,26 @@
+{
+  "url": "https://www.thousandfell.com/products/mens-lace-up-white-butter",
+  "title": null,
+  "category": "clothing",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": true,
+    "ingredients": {
+      "explicit": [
+        [
+          "bio-leather",
+          "bio leather",
+          "corn"
+        ],
+        "rubber",
+        "polyester"
+      ],
+      "excluded": [
+        "suede",
+        "wool"
+      ]
+    }
+  },
+  "notes": "Sneakers without animal products."
+}

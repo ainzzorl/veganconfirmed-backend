@@ -1,0 +1,29 @@
+{
+  "url": "https://www.google.com/maps/place/Kembali+Warung/@-8.65,115.13,17z",
+  "title": "Kembali Warung",
+  "category": "restaurant",
+  "request": {
+    "source": "google_maps_menu_tab",
+    "place_id": "ChIJeval0000KembaliWarung",
+    "restaurant_name": "Kembali Warung"
+  },
+  "expect": {
+    "page_kind": "restaurant_menu",
+    "is_shopping_item": false,
+    "is_vegan": null,
+    "vegan_friendliness": ["high", "medium"],
+    "menu": {
+      "restaurant_name": "Kembali Warung",
+      "dishes": [
+        { "name": "Nasi Goreng", "verdict": "not_vegan" },
+        { "name": "Gado-Gado", "verdict": ["vegan", "likely_vegan"] },
+        { "name": "Tempeh Goreng", "verdict": ["vegan", "likely_vegan"] },
+        { "name": "Sate Ayam", "verdict": "not_vegan" },
+        { "name": "Sayur Lodeh", "verdict": ["vegan", "likely_vegan"] },
+        { "name": "Es Kelapa Muda", "verdict": ["vegan", "likely_vegan"] },
+        { "name": "Pisang Goreng", "verdict": "not_vegan" }
+      ]
+    }
+  },
+  "notes": "The Google Maps place-panel menu tab — the path most production menu analyses actually take, and the one the corpus never covered. Markup is nothing like a restaurant's own site: div soup, no <ul>, no sections, prices interleaved, and the page carries review/rating/hours chrome the extractor has to drop. Two dishes (Tempeh Goreng, Es Kelapa Muda) have no description at all, so their verdict has to come from the name. `request.source`/`restaurant_name` mirror what the Maps extractor sends; the name reaches the model as the title (analysis_core._run_analysis)."
+}

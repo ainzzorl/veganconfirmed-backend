@@ -1,0 +1,18 @@
+{
+  "url": "https://www.thredup.com/product/lauren-by-ralph-lauren-casual-skirt/232627694",
+  "title": null,
+  "category": "clothing",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": false,
+    "is_cruelty_free": null,
+    "ingredients": {
+      "explicit": [
+        "wool",
+        "elastane"
+      ]
+    }
+  },
+  "notes": "Wool skirt. The list of materials is hidden by default."
+}

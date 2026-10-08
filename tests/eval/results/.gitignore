@@ -1,0 +1,4 @@
+# Generated eval run outputs; keep the directory, ignore the results.
+*.json
+*.html
+!.gitignore

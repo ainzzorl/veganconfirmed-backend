@@ -1,0 +1,22 @@
+{
+  "url": "https://www.kohls.com/product/prd-7838320/womens-simply-vera-vera-wang-luxe-crepe-wide-leg-trousers.jsp?skuid=68933389",
+  "title": "Women's Simply Vera Vera Wang Luxe Crepe Wide Leg Trousers ",
+  "category": "clothing",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": true,
+    "is_cruelty_free": null,
+    "ingredients": {
+      "explicit": [
+        "polyester"
+      ],
+      "excluded": [
+        "wool",
+        "leather",
+        "silk"
+      ]
+    }
+  },
+  "notes": "Polyester pants."
+}

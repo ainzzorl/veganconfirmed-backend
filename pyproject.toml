@@ -1,0 +1,50 @@
+[project]
+name = "vegassist-backend"
+version = "1.0.0"
+description = "Backend service for Vegan Confirmed browser extension"
+authors = [{ name = "Your Name", email = "your.email@example.com" }]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11,<4.0"
+dependencies = [
+    "flask>=2.3.3,<3.0.0",
+    "flask-cors>=4.0.0,<5.0.0",
+    "google-generativeai>=0.8.0,<0.9.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "requests>=2.31.0,<3.0.0",
+    "gunicorn>=21.2.0,<22.0.0",
+    "pydantic>=2.5.0,<3.0.0",
+    "functions-framework>=3.5.0,<4.0.0",
+    "firebase-admin>=6.2.0,<7.0.0",
+    "google-cloud-firestore>=2.21.0,<3.0.0",
+    "google-cloud-logging>=3.10.0,<4.0.0",
+    "maxminddb>=3.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0,<8.0.0",
+    "black>=23.0.0,<24.0.0",
+    "flake8>=6.0.0,<7.0.0",
+    "mypy>=1.0.0,<2.0.0",
+]
+
+# The repository is a plain service, not an installable package, so uv only
+# manages the environment and never tries to build/install the project itself.
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: end-to-end tests that require the Firestore emulator, the desktop-server worker, and a running LM Studio",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

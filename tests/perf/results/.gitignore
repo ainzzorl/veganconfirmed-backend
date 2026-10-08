@@ -1,0 +1,4 @@
+# Generated perf run outputs; keep the directory, ignore the results.
+*.json
+*.md
+!.gitignore

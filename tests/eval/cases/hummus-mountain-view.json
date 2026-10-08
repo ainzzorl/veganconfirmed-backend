@@ -1,0 +1,20 @@
+{
+  "url": "https://static1.squarespace.com/static/60d22470924e3f7d5c34d24a/t/694ec7ca899c0114fc49d207/1766770634445/TRIFOLD+MENU_MOUNTAIN+VIEW+%283%29.pdf",
+  "title": "Hummus Mountain View",
+  "category": "restaurant",
+  "skip": "Image-based PDF: CorelDRAW converted the dish names to vector outlines, so the text layer holds only the prices (24 words across 2 pages). Needs a vision model; parked until there is one.",
+  "expect": {
+    "page_kind": "restaurant_menu",
+    "is_shopping_item": false,
+    "is_vegan": null,
+    "vegan_friendliness": ["medium", "low", "high"],
+    "menu": {
+      "restaurant_name": "Hummus Mountain View",
+      "dishes": [
+        { "name": "Classic Hummus", "verdict": ["vegan"] },
+        { "name": "Chicken Kebab", "verdict": ["not_vegan"] },
+        { "name": "Falafel Wrap", "verdict": ["vegan", "likely_vegan"] }
+      ]
+    }
+  }
+}

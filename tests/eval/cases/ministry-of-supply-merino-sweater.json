@@ -1,0 +1,21 @@
+{
+  "url": "https://www.ministryofsupply.com/collections/mens-sweaters/products/mens-travel-merino-lightweight-waffle-crewneck-denim-blue?variant=42169802293323",
+  "title": null,
+  "category": "clothing",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": false,
+    "is_cruelty_free": null,
+    "ingredients": {
+      "explicit": [
+        [
+          "merino",
+          "wool",
+          "cashwool"
+        ]
+      ]
+    }
+  },
+  "notes": "Sweater made of merino wool."
+}

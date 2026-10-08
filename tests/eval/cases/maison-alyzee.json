@@ -1,0 +1,20 @@
+{
+  "url": "https://docs.wixstatic.com/ugd/7a74db_373102adeea341d3b8c02662e6269b23.pdf",
+  "title": "Maison Alyzée",
+  "category": "restaurant",
+  "expect": {
+    "page_kind": "restaurant_menu",
+    "is_shopping_item": false,
+    "is_vegan": null,
+    "vegan_friendliness": ["low"],
+    "menu": {
+      "restaurant_name": "Maison Alyzée",
+      "dishes": [
+        { "name": "Club Parisien", "verdict": ["not_vegan"] },
+        { "name": "Quiche Veggie", "verdict": ["not_vegan"] },
+        { "name": "Veggie", "verdict": ["vegan", "likely_vegan"] }
+      ]
+    }
+  },
+  "notes": "A text-layer PDF menu: pdf.js reads it straight out of the file, so it travels in the ordinary `content` field and either provider can serve it. The dish list is a spot-check, not the whole menu (the PDF runs to ~40 dishes across viennoiserie, breakfast, lunch and salads). \"Quiche Veggie\" is listed alongside the \"Veggie\" salad on purpose: the two share a token, so without an expectation of its own the quiche gets claimed by the salad's containment match whenever a model misses the salad, and a missed dish is scored as a wrong verdict instead."
+}

@@ -1,0 +1,26 @@
+{
+  "url": "https://nutsforcheese.com/products/dairy-free-black-garlic-cheese",
+  "title": "Black Garlic Dairy-Free Cheese | Nuts For Cheese™",
+  "category": "food",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": true,
+    "is_cruelty_free": null,
+    "ingredients": {
+      "explicit": [
+        "cashew",
+        "coconut oil",
+        "nutritional yeast"
+      ],
+      "excluded": [
+        "milk",
+        "dairy",
+        "cream",
+        "whey",
+        "casein"
+      ]
+    }
+  },
+  "notes": "Vegan Cheese."
+}

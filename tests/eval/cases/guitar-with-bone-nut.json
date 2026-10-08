@@ -1,0 +1,19 @@
+{
+  "url": "https://hilsamerica.com/the-instruments/p/hils-next-hz8-8-string-guitar?srsltid=AU7gw4X6xnLpa2VjSUa0jCiD1T6v3FYzgjmzswdfz0wPg2tCmiwsjE-V",
+  "title": "HILS Hz8 8 String Multi-scale Guitar: Lead with the instrument",
+  "category": "instruments",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": false,
+    "ingredients": {
+      "explicit": [
+        [
+          "bone nut",
+          "bone"
+        ]
+      ]
+    }
+  },
+  "notes": "Has bone nut."
+}

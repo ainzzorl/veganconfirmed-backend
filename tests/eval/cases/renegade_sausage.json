@@ -1,0 +1,25 @@
+{
+  "url": "https://www.amazon.com/dp/B0BZT4MHDJ",
+  "title": "Renegade Foods Artisan Vegan Salami | 3 Pack | Smoky Soppressata, Sweet Toscana, Spicy Chorizo | High Protein, Low Sugar, Seitan, Non-GMO | 16 - 17g of Protein Per Serving | Indulge European-Style Plant-Based Food ",
+  "category": "food",
+  "expect": {
+    "page_kind": "shopping_item",
+    "is_shopping_item": true,
+    "is_vegan": true,
+    "is_cruelty_free": null,
+    "ingredients": {
+      "explicit": [
+        "wheat gluten",
+        "olive oil",
+        "soy"
+      ],
+      "excluded": [
+        "pork",
+        "beef",
+        "chicken",
+        "milk"
+      ]
+    }
+  },
+  "notes": "Vegan sausage."
+}
