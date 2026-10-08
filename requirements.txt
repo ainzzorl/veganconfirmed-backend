@@ -4,6 +4,8 @@ annotated-types==0.8.0
     # via pydantic
 anyio==4.14.2
     # via httpx
+authlib==1.8.0
+    # via vegassist-backend
 blinker==1.9.0
     # via flask
 cachecontrol==0.14.4
@@ -29,7 +31,9 @@ colorama==0.4.6 ; sys_platform == 'win32'
     #   tqdm
 cryptography==50.0.0
     # via
+    #   authlib
     #   google-auth
+    #   joserfc
     #   pyjwt
 deprecation==2.1.0
     # via cloudevents
@@ -148,6 +152,8 @@ itsdangerous==2.2.0
     # via flask
 jinja2==3.1.6
     # via flask
+joserfc==1.7.5
+    # via authlib
 markupsafe==3.0.3
     # via
     #   jinja2

@@ -1,4 +1,4 @@
-"""Local-only web viewer for the Firestore data this service writes.
+"""Web viewer for the Firestore data this service writes.
 
 A debugging aid: it renders the ``api_calls`` collection as a browsable list of
 requests with their stored page content, verdicts, how long each call took and
@@ -6,7 +6,8 @@ provider/token details, plus a detail page per record showing every field of
 the raw document.
 
 It is deliberately unauthenticated, and therefore only ever served to a caller
-on the same machine.
+on the same machine. The deployed copy (viewer_main.py) puts a Google sign-in
+in front of it instead.
 
 A record served by the desktop-server carries the ID of the job it ran as, so
 the detail page follows that link into the ``lms_jobs`` collection and shows the
@@ -896,13 +897,17 @@ def _load_job(
     return job, ""
 
 
-def make_blueprint(firestore_service) -> Blueprint:
-    """Build the viewer blueprint over an already-constructed FirestoreService."""
+def make_blueprint(firestore_service, local_only: bool = True) -> Blueprint:
+    """Build the viewer blueprint over an already-constructed FirestoreService.
+
+    ``local_only=False`` drops the loopback check; only for an app that gates
+    every request itself (viewer_main.py).
+    """
     bp = Blueprint("db_viewer", __name__, url_prefix=URL_PREFIX)
 
     @bp.before_request
     def _local_only():
-        if not _request_is_local():
+        if local_only and not _request_is_local():
             logger.warning(
                 "Refusing non-local database-viewer request from %s",
                 request.remote_addr,

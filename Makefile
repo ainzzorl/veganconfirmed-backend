@@ -1,4 +1,4 @@
-.PHONY: run-local-remote run-local run-prod deploy-service deploy-weekly-report geoip
+.PHONY: run-local-remote run-local run-prod deploy-service deploy-weekly-report deploy-db-viewer geoip
 
 # Project id for the local Firestore emulator. It matches the one desktop-server's
 # tooling uses (its `make emulator`, tests/integration/run.sh), so a locally
@@ -48,6 +48,10 @@ deploy-service: $(ENV_FILE)
 # The weekly report function, plus its Cloud Scheduler job.
 deploy-weekly-report: $(ENV_FILE)
 	set -a && . ./$(ENV_FILE) && set +a && ./scripts/deploy_weekly_report_function.sh
+
+# The database viewer on Cloud Run, behind Google sign-in (viewer_main.py).
+deploy-db-viewer: $(ENV_FILE)
+	set -a && . ./$(ENV_FILE) && set +a && ./scripts/deploy_db_viewer.sh
 
 $(ENV_FILE):
 	@echo "Error: $(ENV_FILE) not found. Copy env.example to $(ENV_FILE) and fill it in." >&2; exit 1
