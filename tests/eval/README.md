@@ -41,13 +41,11 @@ optional combined HTML report (`--html`).
     "url": "https://example.com/oat-milk",
     "title": null,
     "category": "food",
-    "user_avoided_ingredients": ["honey"],
     "expect": {
       "page_kind": "shopping_item",
       "is_shopping_item": true,
       "is_vegan": true,
-      "is_cruelty_free": null,
-      "user_avoided_ingredients_include": ["honey"]
+      "is_cruelty_free": null
     },
     "notes": "..."
   }
@@ -67,9 +65,6 @@ optional combined HTML report (`--html`).
     of accepted values** instead of one value — `"vegan_friendliness": ["medium",
     "high"]` — for the genuinely subjective ones, where insisting on a single
     answer would score a defensible one as wrong.
-  - `user_avoided_ingredients` (top level) is passed into the analysis;
-    `user_avoided_ingredients_include` (under `expect`) is the recall check that
-    those show up in the result.
   - `ingredients` (under `expect`, shopping items) checks the two ingredient
     lists the analysis returns: each term under `explicit` / `inferred` must
     appear in `shopping_item.explicit_ingredients` / `inferred_ingredients`, and
@@ -292,13 +287,12 @@ at all (the worker, LM Studio and even the heartbeat check are skipped).
 The cache key is the **exact request**, so nothing that decides the answer can
 be left out of it:
 
-- **gemini** — model name, system instruction (which includes the prompt and the
-  user's avoided ingredients), page content, and generation config/response
-  schema.
+- **gemini** — model name, system instruction, page content, and generation
+  config/response schema.
 - **desktop** — the whole OpenAI-format request: model, messages (system prompt,
-  page content, avoided ingredients), `reasoning_effort`, `temperature` and
-  `max_tokens` (which moves with `LMS_CONTEXT_LENGTH`/`LMS_MAX_TOKENS` and with
-  how much of the page fits). So `--run desktop:m:low` and `--run desktop:m:high`
+  page content), `reasoning_effort`, `temperature` and `max_tokens` (which
+  moves with `LMS_CONTEXT_LENGTH`/`LMS_MAX_TOKENS` and with how much of the
+  page fits). So `--run desktop:m:low` and `--run desktop:m:high`
   never share an entry.
 
 Edit the prompt, re-extract a page, switch model or effort and the key changes —
@@ -339,11 +333,9 @@ Drop cached answers for a model by deleting its directory:
 ### HTML report
 Add `--html` to also write a self-contained HTML report. It opens with a legend
 explaining how to read it, and under each case row surfaces the model's own
-**confidence and explanation text** (summary, cruelty-free rationale, avoided
-ingredients found) so a verdict can be understood, not just scored. Menu cases additionally get an expandable **Menu breakdown** — every
+**confidence and explanation text** (summary, cruelty-free rationale) so a verdict can be understood, not just scored. Menu cases additionally get an expandable **Menu breakdown** — every
 expected dish against what the model called it, with the animal-derived
-ingredients the model named for it (plus any avoid-list ingredient it found) and
-the model's own reason, followed by the same columns for every dish the model
+ingredients the model named for it and the model's own reason, followed by the same columns for every dish the model
 listed that the case doesn't declare (shown for reference, never scored). With more than one combo it also includes a cross-model
 comparison table and a per-case pass/fail matrix.
 
@@ -376,7 +368,7 @@ python -m tests.eval --run gemini:gemini-2.5-flash-lite --html report.html  # ex
 
 - Per-case table: the page-kind scope the case ran under, then actual value +
   ✓/✗ per scored field (`kind` first, since every other field is downstream of
-  it), avoided-ingredient recall, the menu summary, overall ✓/✗, latency.
+  it), the menu summary, overall ✓/✗, latency.
 - The `scope` column is what `services/page_scope.py` let the model choose from:
   `all`, or `item`/`menu` when a rule dropped the other branch (the rule's name
   is in the notes column, and the tooltip in the HTML report). It is not scored

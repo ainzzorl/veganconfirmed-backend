@@ -110,7 +110,6 @@ class FirestoreService:
                 # wrong; see analysis_core._save_failure.
                 "status": record.status,
                 "error": record.error,
-                "user_avoided_ingredients": record.user_avoided_ingredients,
                 "service": record.service,
                 "model": record.model,
                 "token_usage": _token_usage_doc(record.token_usage),
@@ -264,7 +263,6 @@ class FirestoreService:
             # every one of them is a request that was answered.
             status=data.get("status") or STATUS_OK,
             error=data.get("error"),
-            user_avoided_ingredients=data.get("user_avoided_ingredients"),
             service=data.get("service"),
             model=data.get("model"),
             token_usage=_token_usage_from_doc(data.get("token_usage")),

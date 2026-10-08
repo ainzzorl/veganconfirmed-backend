@@ -7,7 +7,7 @@ job is only run once, the same way Gemini responses are cached.
 
 The cache is keyed on the *exact* OpenAI-format request the desktop-server is
 handed, which is everything that decides the answer: the model, the messages
-(system prompt, page content, avoided ingredients), ``reasoning_effort``,
+(system prompt, page content), ``reasoning_effort``,
 ``temperature`` and ``max_tokens`` — the last of which moves with
 ``LMS_CONTEXT_LENGTH``/``LMS_MAX_TOKENS`` and with how much of the page fits.
 Hashing the whole request means no parameter can be forgotten: change any of

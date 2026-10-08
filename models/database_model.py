@@ -68,10 +68,9 @@ class MenuRecord(BaseModel):
     """The menu verdict, as stored — null on a record of any other kind.
 
     ``items`` holds the per-dish verdicts as the analysis returned them (name,
-    section, verdict, reason, explicit_ingredients, inferred_ingredients, and
-    user_avoided_ingredients when the request carried an avoid-list), already
-    bounded by ``menu_prompt.MAX_MENU_ITEMS`` — which keeps the list far inside
-    Firestore's 1MB document limit.
+    section, verdict, reason, explicit_ingredients, inferred_ingredients),
+    already bounded by ``menu_prompt.MAX_MENU_ITEMS`` — which keeps the list
+    far inside Firestore's 1MB document limit.
     """
 
     restaurant_name: Optional[str] = None
@@ -148,7 +147,6 @@ class APICallRecord(BaseModel):
     # Groups calls from one extension installation; see PageAnalysisRequest.
     installation_id: Optional[str] = None
     created_at: Optional[datetime] = None
-    user_avoided_ingredients: Optional[list[str]] = None
     trigger_type: Optional[str] = None  # "manual" or "automatic"
     trigger_element_text: Optional[
         str

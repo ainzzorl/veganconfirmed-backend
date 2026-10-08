@@ -46,7 +46,6 @@ _ITEM_FIELD_DESCRIPTIONS = {
     "inferred_ingredients": "Ingredients the item contains by convention but the menu does not name, e.g. the beef patty in a burger (empty if the item is too vaguely described to infer any)",
     "reason": "One short sentence stating the item's vegan status and why. Name the specific animal-derived ingredient when there is one. Do not restate the item name.",
     "verdict": "Vegan status of the item as listed, before any modification. Must match the status already given in the reason.",
-    "user_avoided_ingredients": "Ingredients from the user's avoid-list found in this item",
 }
 
 # Per-item field order, and it matters for the same reason the top-level order
@@ -78,35 +77,13 @@ MENU_FIELDS = [
 ]
 
 
-def includes_user_avoided(user_avoided_ingredients: list[str] | None) -> bool:
-    """Whether the per-item user-avoided-ingredients field is part of the schema.
-
-    The rule lives here so callers that build the schema and callers that
-    normalize a response agree on it.
-    """
-    return bool(user_avoided_ingredients)
-
-
-def build_menu_branch(user_avoided_ingredients: list[str] | None = None) -> str:
+def build_menu_branch() -> str:
     """Build the instruction text for the restaurant-menu branch.
 
     The caller (``page_prompt.build_page_instructions``) has already told the
     model how to choose a ``page_kind``; this text applies once it has chosen
     ``restaurant_menu``.
     """
-    user_avoided_ingredients_instruction = ""
-    if includes_user_avoided(user_avoided_ingredients):
-        user_avoided_ingredients_instruction = (
-            "\n\nUSER AVOID-LIST:\n"
-            "- The user also wants to avoid these ingredients: "
-            + ", ".join(user_avoided_ingredients)
-            + "\n- For each item, list any of them you find in that item's "
-            "user_avoided_ingredients field\n"
-            "- These are in addition to, not instead of, the animal-derived "
-            "ingredients above. An item containing only avoid-list ingredients "
-            "is still vegan; note the ingredient without changing the verdict."
-        )
-
     return f"""IF page_kind IS "restaurant_menu" — extract every item and classify each one:
 - List every food item the menu holds, from the first section to the last. Work through the whole menu: never stop part-way, and never shorten the list to save effort or time. A menu reported in part is wrong, not brief. Drinks are the one exception: see the DRINKS rule below.
 - {MAX_MENU_ITEMS} items is a ceiling, not a target. Fewer than that is correct only when the menu itself holds fewer. When the menu holds more, keep the {MAX_MENU_ITEMS} most useful to a vegan diner: plant-based and ambiguous items first, obviously meat-based items last.
@@ -149,10 +126,10 @@ VERDICT last (based on the item as listed, before any modification), and it must
 
 RESTAURANT-LEVEL FIELDS:
 - vegan_friendliness: "high" if there are several clearly vegan items across the menu, "medium" if there are a few vegan or veganizable items, "low" if only one or two marginal options exist, "none" if a vegan could not eat a meal here
-- summary: one to two sentences a diner can act on — roughly how many vegan options there are and where on the menu they are. The per-item detail belongs in each item's reason, not here. Never leave it empty or use placeholder text.{user_avoided_ingredients_instruction}"""
+- summary: one to two sentences a diner can act on — roughly how many vegan options there are and where on the menu they are. The per-item detail belongs in each item's reason, not here. Never leave it empty or use placeholder text."""
 
 
-def menu_item_properties(include_user_avoided: bool, nullable_flavor: bool) -> dict:
+def menu_item_properties(nullable_flavor: bool) -> dict:
     """Build the per-item object properties in one of the two schema flavors.
 
     ``nullable_flavor`` selects Gemini's ``nullable: True`` over the OpenAI
@@ -190,22 +167,10 @@ def menu_item_properties(include_user_avoided: bool, nullable_flavor: bool) -> d
         "inferred_ingredients": string_list("inferred_ingredients"),
     }
 
-    if include_user_avoided:
-        properties["user_avoided_ingredients"] = string_list(
-            "user_avoided_ingredients"
-        )
-
     return properties
 
 
-def menu_item_required(include_user_avoided: bool) -> list[str]:
-    required = list(_ITEM_REQUIRED_FIELDS)
-    if include_user_avoided:
-        required.append("user_avoided_ingredients")
-    return required
-
-
-def menu_properties(include_user_avoided: bool, nullable_flavor: bool) -> dict:
+def menu_properties(nullable_flavor: bool) -> dict:
     """Build the restaurant-menu schema properties in one of the two flavors."""
 
     def optional(type_name: str, description: str) -> dict:
@@ -215,8 +180,8 @@ def menu_properties(include_user_avoided: bool, nullable_flavor: bool) -> dict:
 
     item_schema = {
         "type": "object",
-        "properties": menu_item_properties(include_user_avoided, nullable_flavor),
-        "required": menu_item_required(include_user_avoided),
+        "properties": menu_item_properties(nullable_flavor),
+        "required": list(_ITEM_REQUIRED_FIELDS),
     }
     if not nullable_flavor:
         item_schema["additionalProperties"] = False
@@ -240,9 +205,7 @@ def menu_properties(include_user_avoided: bool, nullable_flavor: bool) -> dict:
     }
 
 
-def normalize_menu_fields(
-    analysis: dict, applies: bool, include_user_avoided: bool
-) -> None:
+def normalize_menu_fields(analysis: dict, applies: bool) -> None:
     """Default the menu fields in place, so both providers return one shape.
 
     A model that omits ``section`` or an ingredient list on an item, or drops
@@ -276,8 +239,6 @@ def normalize_menu_fields(
         item.setdefault("reason", "")
         item.setdefault("explicit_ingredients", [])
         item.setdefault("inferred_ingredients", [])
-        if include_user_avoided:
-            item.setdefault("user_avoided_ingredients", [])
         normalized_items.append(item)
 
     analysis["items"] = normalized_items

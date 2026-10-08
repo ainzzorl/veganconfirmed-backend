@@ -56,7 +56,7 @@ class GeminiService:
 
         genai.configure(api_key=api_key)
         # The model is built per request so the analysis instructions can be
-        # passed as a system_instruction (it varies with user_avoided_ingredients).
+        # passed as a system_instruction (it varies with the page scope).
         self.model_name = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
         logger.info(
@@ -68,7 +68,6 @@ class GeminiService:
         url: str,
         title: str,
         content: str,
-        user_avoided_ingredients: list[str] | None = None,
         page_kinds: tuple[str, ...] = ALL_PAGE_KINDS,
     ) -> Tuple[Dict[str, Any], ProviderCall]:
         """
@@ -78,7 +77,6 @@ class GeminiService:
             url: The webpage URL
             title: The page title (or restaurant name, when the caller knows one)
             content: The extracted text/markdown content of the page
-            user_avoided_ingredients: List of ingredients and materials the user considers non-vegan, in addition to the common animal-derived materials.
             page_kinds: The kinds this request could be — see ``page_scope``.
                 Narrowing it prunes the other branch from both the instructions
                 and the response schema.
@@ -89,18 +87,12 @@ class GeminiService:
             any.
         """
         try:
-            instructions, has_user_avoided = build_page_instructions(
-                user_avoided_ingredients=user_avoided_ingredients,
-                page_kinds=page_kinds,
-            )
+            instructions = build_page_instructions(page_kinds=page_kinds)
             page_content, truncated = build_page_content(
                 url=url, title=title, content=content
             )
 
-            # Build schema based on whether user_avoided_ingredients is needed
-            response_schema = build_gemini_page_schema(
-                include_user_avoided=has_user_avoided, page_kinds=page_kinds
-            )
+            response_schema = build_gemini_page_schema(page_kinds=page_kinds)
 
             # Static instructions go in the system_instruction; the variable page
             # data is the request content.
@@ -123,9 +115,7 @@ class GeminiService:
             )
 
             analysis = normalize_page_analysis(
-                json.loads(response.text),
-                include_user_avoided=has_user_avoided,
-                page_kinds=page_kinds,
+                json.loads(response.text), page_kinds=page_kinds
             )
             if truncated:
                 add_truncation_warning(analysis)

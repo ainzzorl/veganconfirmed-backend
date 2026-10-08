@@ -69,17 +69,13 @@ def _analysis_field(analysis: dict[str, Any], name: str) -> Any:
     return value
 
 
-# Key in a case's `expect` block listing avoided ingredients the model should
-# surface in analysis["user_avoided_ingredients"].
-AVOIDED_INCLUDE_KEY = "user_avoided_ingredients_include"
-
 # Key in a case's `expect` block holding the shopping-item ingredient
 # expectations: {"explicit": [...], "inferred": [...], "excluded": [...]}.
 # A term in `explicit` / `inferred` must turn up in that list of the analysis;
 # a term in `excluded` must turn up in neither — it is how a case catches the
 # model inferring an animal ingredient into a product that has none. A term may
 # be a list of accepted spellings ("merino" / "wool"). Matching is a
-# case-insensitive substring, as for avoided ingredients.
+# case-insensitive substring.
 INGREDIENTS_KEY = "ingredients"
 
 # Which list of ``shopping_item`` each expected-term group is checked against.
@@ -241,9 +237,6 @@ class CaseResult:
     error: Optional[str] = None
     latency_s: Optional[float] = None
     fields: dict[str, FieldResult] = field(default_factory=dict)
-    avoided_expected: list[str] = field(default_factory=list)
-    avoided_found: list[str] = field(default_factory=list)
-    avoided_recall: Optional[float] = None
     menu: Optional[MenuResult] = None
     ingredients: Optional[IngredientResult] = None
     # The page-kind scope the case actually ran under, and the page_scope rule
@@ -272,18 +265,12 @@ class CaseResult:
     def all_correct(self) -> bool:
         if self.errored:
             return False
-        if (
-            not self.fields
-            and self.avoided_recall is None
-            and self.menu is None
-            and self.ingredients is None
-        ):
+        if not self.fields and self.menu is None and self.ingredients is None:
             return False  # nothing was actually checked
         fields_ok = all(fr.correct for fr in self.fields.values())
-        avoided_ok = self.avoided_recall is None or self.avoided_recall >= 1.0
         menu_ok = self.menu is None or self.menu.all_correct
         ingredients_ok = self.ingredients is None or self.ingredients.all_correct
-        return fields_ok and avoided_ok and menu_ok and ingredients_ok
+        return fields_ok and menu_ok and ingredients_ok
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -301,13 +288,6 @@ class CaseResult:
                 }
                 for name, fr in self.fields.items()
             },
-            "avoided": {
-                "expected": self.avoided_expected,
-                "found": self.avoided_found,
-                "recall": self.avoided_recall,
-            }
-            if self.avoided_expected
-            else None,
             "menu": self.menu.to_dict() if self.menu is not None else None,
             "ingredients": self.ingredients.to_dict()
             if self.ingredients is not None
@@ -360,17 +340,6 @@ def score_case(
     if INGREDIENTS_KEY in expect:
         result.ingredients = score_ingredients(expect[INGREDIENTS_KEY], analysis)
 
-    if AVOIDED_INCLUDE_KEY in expect:
-        expected_list = [s.lower() for s in expect[AVOIDED_INCLUDE_KEY]]
-        found_raw = analysis.get("user_avoided_ingredients") or []
-        found = [str(s).lower() for s in found_raw]
-        matched = [e for e in expected_list if any(e in f for f in found)]
-        result.avoided_expected = expected_list
-        result.avoided_found = found
-        result.avoided_recall = (
-            len(matched) / len(expected_list) if expected_list else None
-        )
-
     return result
 
 
@@ -404,15 +373,6 @@ def aggregate(results: list[CaseResult], by_type: bool = True) -> dict[str, Any]
                     confusion.items(), key=lambda kv: str(kv[0])
                 )
             },
-        }
-
-    avoided_cases = [r for r in scored if r.avoided_recall is not None]
-    avoided = None
-    if avoided_cases:
-        avoided = {
-            "cases": len(avoided_cases),
-            "mean_recall": sum(r.avoided_recall for r in avoided_cases)
-            / len(avoided_cases),
         }
 
     ingredient_cases = [r for r in scored if r.ingredients is not None]
@@ -499,7 +459,6 @@ def aggregate(results: list[CaseResult], by_type: bool = True) -> dict[str, Any]
         "errored": len(errored),
         "fully_correct": sum(1 for r in scored if r.all_correct),
         "per_field": per_field,
-        "avoided_ingredients": avoided,
         "ingredients": ingredients,
         "menu": menu,
         "by_category": {k: dict(v) for k, v in sorted(by_category.items())},
@@ -595,13 +554,13 @@ def render_report(
     field_header = " ".join(f"{text:>7}" for text, _ in _FIELD_COLUMNS.values())
     header = (
         f"{'case':<28} {'scope':>5} {field_header} "
-        f"{'avoid':>6} {'ingr':>8} {'menu':>16} {'ok':>4}  notes"
+        f"{'ingr':>8} {'menu':>16} {'ok':>4}  notes"
     )
     lines.append(header)
     lines.append("-" * len(header))
     for r in results:
         if r.errored:
-            lines.append(f"{r.case_id:<28} {'ERROR':>45}  {r.error}")
+            lines.append(f"{r.case_id:<28} {'ERROR':>38}  {r.error}")
             continue
 
         def cell(name: str) -> str:
@@ -613,11 +572,6 @@ def render_report(
             if name == "page_kind":
                 value = _KIND_ABBR.get(fr.actual, value)
             return f"{value}{mark}"
-
-        avoid_cell = "·"
-        if r.avoided_recall is not None:
-            mark = "✓" if r.avoided_recall >= 1.0 else "✗"
-            avoid_cell = f"{r.avoided_recall:.0%}{mark}"
 
         menu_ok, menu_text = _menu_cell(r)
         if menu_ok is not None:
@@ -643,7 +597,7 @@ def render_report(
         field_cells = " ".join(f"{cell(name):>7}" for name in _FIELD_COLUMNS)
         lines.append(
             f"{r.case_id:<28} {scope_cell:>5} {field_cells} "
-            f"{avoid_cell:>6} {ingr_text:>8} {menu_text:>16} {ok:>4}  {notes}"
+            f"{ingr_text:>8} {menu_text:>16} {ok:>4}  {notes}"
         )
 
     # Aggregates.
@@ -658,13 +612,6 @@ def render_report(
             )
     else:
         lines.append("  (no scored fields)")
-
-    if agg["avoided_ingredients"]:
-        a = agg["avoided_ingredients"]
-        lines.append(
-            f"  avoided-ingredient recall {a['mean_recall']:.0%} "
-            f"(over {a['cases']} case(s))"
-        )
 
     if agg["ingredients"]:
         i = agg["ingredients"]
@@ -752,7 +699,7 @@ _HTML_STYLE = """
   --bg: #f6f7f9; --fg: #1a1a1a; --surface: #fff; --surface-alt: #fff;
   --th-bg: #f0f2f5; --subhead-bg: #f6f8fa; --border: #e1e4e8;
   --muted: #888; --dim: #57606a; --strong: #424a53; --dot: #aaa;
-  --ok: #1a7f37; --bad: #cf222e; --err: #9a6700; --avoid: #9a6700;
+  --ok: #1a7f37; --bad: #cf222e; --err: #9a6700;
   --bar: #2da44e; --barbg: #d0d7de; --legend-border: #d0d7de;
   --conf-bg: #ddf4ff; --conf-fg: #0550ae;
 }
@@ -761,7 +708,7 @@ _HTML_STYLE = """
     --bg: #14161a; --fg: #e6e6e6; --surface: #1c1f24; --surface-alt: #20242b;
     --th-bg: #262a31; --subhead-bg: #20242b; --border: #2a2f37;
     --muted: #8b949e; --dim: #9aa4af; --strong: #c9d1d9; --dot: #6e7681;
-    --ok: #3fb950; --bad: #f85149; --err: #d29922; --avoid: #d4a72c;
+    --ok: #3fb950; --bad: #f85149; --err: #d29922;
     --bar: #2ea043; --barbg: #3a414b; --legend-border: #3a414b;
     --conf-bg: #0b2942; --conf-fg: #6cb6ff;
   }
@@ -801,7 +748,6 @@ summary { cursor: pointer; padding: .75rem 0; font-weight: 600; }
 .exp b { color: var(--strong); }
 .conf { display: inline-block; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em;
   background: var(--conf-bg); color: var(--conf-fg); border-radius: 10px; padding: .05rem .5rem; margin-bottom: .25rem; }
-.avoid { color: var(--avoid); }
 tr.subhead td {
   background: var(--subhead-bg); color: var(--dim); font-size: .78rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: .03em;
@@ -889,11 +835,6 @@ def _explanation_cell(r: "CaseResult") -> str:
             )
         for term in r.ingredients.excluded_found:
             bits.append(f'<span class="exp bad">Listed but excluded: {_h(term)}</span>')
-    found = analysis.get("user_avoided_ingredients")
-    if found:
-        bits.append(
-            f'<span class="exp"><b>Avoided found:</b> {_h(", ".join(map(str, found)))}</span>'
-        )
     return "".join(bits)
 
 
@@ -903,8 +844,7 @@ def _ingredients_cell(
     """The ingredients the model named for one dish, listed then inferred.
 
     Unscored, so an empty list renders as the answer it is ("none") rather than
-    as a missing expectation. Avoid-list hits are shown alongside, since a dish
-    can be vegan and still contain something the user avoids.
+    as a missing expectation.
     """
     bits = []
     if d.explicit_ingredients:
@@ -913,10 +853,6 @@ def _ingredients_cell(
         bits.append(f'inferred: {_h(", ".join(d.inferred_ingredients))}')
     if not bits:
         bits.append('<span class="dot">none</span>')
-    if d.avoided_ingredients:
-        bits.append(
-            f'<span class="avoid">avoid: {_h(", ".join(d.avoided_ingredients))}</span>'
-        )
     return "<br>".join(bits)
 
 
@@ -1086,7 +1022,7 @@ def _comparison_table(runs: list[dict[str, Any]]) -> str:
         head += ["Ingredient recall", "Excluded listed"]
     if any_menu:
         head += ["Dish recall", "Verdict acc"]
-    head += ["Avoided recall", "Mean latency"]
+    head += ["Mean latency"]
     rows = [
         "<tr>"
         + "".join(
@@ -1131,12 +1067,6 @@ def _comparison_table(runs: list[dict[str, Any]]) -> str:
                     if menu
                     else '<td class="num dot">·</td>'
                 )
-        avoided = agg["avoided_ingredients"]
-        cells.append(
-            f'<td class="num">{_pct(avoided["mean_recall"])}</td>'
-            if avoided
-            else '<td class="num dot">·</td>'
-        )
         lat = agg["mean_latency_s"]
         cells.append(
             f'<td class="num">{lat:.1f}s</td>'
@@ -1213,7 +1143,6 @@ def _run_detail(run: dict[str, Any]) -> str:
         "Category",
         "scope",
         *(label for _, label in _FIELD_COLUMNS.values()),
-        "avoided",
         "ingredients",
         "menu",
         "ok",
@@ -1229,10 +1158,6 @@ def _run_detail(run: dict[str, Any]) -> str:
                 f'<td class="err" colspan="{span}">ERROR: {_h(r.error)}</td></tr>'
             )
             continue
-        if r.avoided_recall is None:
-            avoid = '<span class="dot">·</span>'
-        else:
-            avoid = _mark_cell(r.avoided_recall >= 1.0, _pct(r.avoided_recall))
         ingr_ok, ingr_text = _ingredients_summary(r)
         ingr_cell = (
             '<span class="dot">·</span>'
@@ -1255,7 +1180,6 @@ def _run_detail(run: dict[str, Any]) -> str:
             f"<td>{_h(r.category)}</td>"
             f"<td>{_scope_html(r)}</td>"
             f"{field_cells}"
-            f"<td>{avoid}</td>"
             f"<td>{ingr_cell}</td>"
             f"<td>{menu_cell}</td>"
             f'<td>{_mark_cell(r.all_correct, "yes" if r.all_correct else "no")}</td>'
@@ -1317,8 +1241,7 @@ def render_html(runs: list[dict[str, Any]], generated_at: Optional[str] = None) 
         '<span class="ok">✓</span> (matches the case\'s expectation) or '
         '<span class="bad">✗</span> (mismatch); <span class="dot">·</span> means '
         "the case declares no expectation for that field. <b>ok</b> is true only "
-        "when every declared field matches. <b>avoided</b> is recall of the "
-        "user-avoided ingredients the model should have surfaced. <b>ingredients</b> "
+        "when every declared field matches. <b>ingredients</b> "
         "is recall of the terms a product case expects in the model's listed / "
         "inferred ingredients, with <i>!n</i> for terms it listed that the case "
         "excludes. <b>menu</b> is "

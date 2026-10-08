@@ -65,7 +65,6 @@ def build(
                 "title": data["title"],
                 "content": data["content"],
                 "chars": len(data["content"]),
-                "user_avoided_ingredients": data.get("user_avoided_ingredients"),
                 "source": data.get("source"),
                 "trigger_type": data.get("trigger_type"),
                 "page_signals": data.get("page_signals"),

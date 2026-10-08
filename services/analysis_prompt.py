@@ -34,7 +34,6 @@ FIELD_DESCRIPTIONS = {
     "is_vegan": "Whether the product is vegan: false when animal_derived_materials is non-empty, true when it is empty (null unless page_kind is shopping_item). Must agree with the verdict already given in the summary.",
     "is_cruelty_free": "Whether the product is cruelty-free/not tested on animals (null if not applicable, e.g. food, clothing, electronics)",
     "cruelty_free_explanation": "Brief explanation of cruelty-free findings. Null unless the product is a cosmetic, personal-care or cleaning product — food, clothing, footwear and electronics get null here, not a sentence.",
-    "user_avoided_ingredients": "List of user-specified ingredients found in the product",
     "confidence_level": "Confidence in the vegan and cruelty-free verdicts above (null unless page_kind is shopping_item)",
 }
 
@@ -85,24 +84,14 @@ ITEM_VERDICT_FIELDS = [
 ITEM_FIELDS = ITEM_EVIDENCE_FIELDS + ITEM_VERDICT_FIELDS
 
 
-def build_item_branch(user_avoided_ingredients: list[str] | None = None) -> str:
+def build_item_branch() -> str:
     """Build the instruction text for the shopping-item branch.
 
     The caller (``page_prompt.build_page_instructions``) has already told the
     model how to choose a ``page_kind``; this text applies once it has chosen
     ``shopping_item``.
     """
-    user_avoided_ingredients_instruction = ""
-    if user_avoided_ingredients:
-        user_avoided_ingredients_instruction = (
-            "\n- Also check whether the product contains any of these "
-            "ingredients the user wants to avoid: "
-            + ", ".join(user_avoided_ingredients)
-            + "\n  Include any you find in the top-level "
-            "user_avoided_ingredients field."
-        )
-
-    return f"""IF page_kind IS "shopping_item" — analyze the product for vegan status:
+    return """IF page_kind IS "shopping_item" — analyze the product for vegan status:
 
 FIRST, fill in materials_found — the materials and ingredients the page states the product is made of, in the page's own words:
 - List them all, plant and synthetic ones (cotton, polyester, rubber, plastic) as well as animal-derived ones. Do not filter or judge yet.
@@ -133,7 +122,7 @@ THEN read is_vegan off that list — there is no judgement left at this step:
 - The summary should be a complete one-to-two sentence plain-language description of the product and its vegan status, concise and
   to the point. Open directly with the vegan (and cruelty-free, if applicable) verdict and the reason for it. Do not begin with
   preamble about the page itself (e.g. "The page describes...", "The page lists a product..."); go straight to the reasoning behind
-  the status. Never leave it empty or use placeholder text like "..." or "analysis".{user_avoided_ingredients_instruction}
+  the status. Never leave it empty or use placeholder text like "..." or "analysis".
 
 CRUELTY-FREE ANALYSIS — check first whether it applies at all:
 - It applies to cosmetics, skincare, makeup, personal care (soap, body wash, shampoo, deodorant, toothpaste and the like), hair care, body care, household cleaners, cleaning products and laundry products, and to nothing else.

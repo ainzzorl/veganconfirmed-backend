@@ -125,7 +125,6 @@ DOCS = [
                 "reason": "Chickpea patty in flatbread with tahini.",
                 "explicit_ingredients": ["chickpea patty", "flatbread", "tahini"],
                 "inferred_ingredients": [],
-                "user_avoided_ingredients": [],
             },
             {
                 "name": "Mushroom risotto",
@@ -134,7 +133,6 @@ DOCS = [
                 "reason": "Contains parmesan and butter.",
                 "explicit_ingredients": ["mushroom", "parmesan"],
                 "inferred_ingredients": ["butter", "rice"],
-                "user_avoided_ingredients": [],
             },
             ],
         },
@@ -245,24 +243,6 @@ def test_detail_shows_every_dish(client):
     assert '<td class="v-not">not vegan</td>' in body
     assert '<td class="v-vegan">vegan</td>' in body
     assert "vegan: 1" in body
-    # No dish names an avoid-list ingredient, so that column stays off.
-    assert "Avoided" not in body
-
-
-def test_detail_shows_the_avoid_list_column_when_a_dish_names_one(client):
-    docs = [dict(DOCS[1], id="gamma")]
-    docs[0]["menu"] = dict(
-        DOCS[1]["menu"],
-        items=[
-            dict(DOCS[1]["menu"]["items"][0], user_avoided_ingredients=["palm oil"])
-        ],
-    )
-    app = Flask(__name__)
-    register_db_viewer(app, FakeFirestoreService(docs))
-
-    body = app.test_client().get(f"{URL_PREFIX}/gamma").get_data(as_text=True)
-    assert "Avoided" in body
-    assert "palm oil" in body
 
 
 def test_detail_of_a_record_without_dishes_has_no_dish_table(client):

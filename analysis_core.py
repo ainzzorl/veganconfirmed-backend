@@ -74,13 +74,6 @@ def _as_optional_str(value: Any) -> Optional[str]:
     return None if value is None else str(value)
 
 
-def _as_str_list(value: Any) -> Optional[list[str]]:
-    """Coerce a value from a raw payload to a list of strings, or ``None``."""
-    if isinstance(value, (list, tuple)):
-        return [str(item) for item in value]
-    return None
-
-
 class AnalysisCore:
     """Core analysis functionality that can be used by both Flask and Cloud Functions"""
 
@@ -228,7 +221,6 @@ class AnalysisCore:
             url=analysis_request.url,
             title=analysis_request.restaurant_name or analysis_request.title,
             content=analysis_request.content,
-            user_avoided_ingredients=analysis_request.user_avoided_ingredients,
             page_kinds=page_kinds,
         )
         return analysis_result, provider_call, decision
@@ -290,7 +282,6 @@ class AnalysisCore:
                 finished_at=datetime.now(timezone.utc),
                 extension_version=analysis_request.extension_version,
                 installation_id=analysis_request.installation_id,
-                user_avoided_ingredients=analysis.user_avoided_ingredients,
                 trigger_type=analysis_request.trigger_type,
                 trigger_element_text=analysis_request.trigger_element_text,
                 trigger_element_selector=analysis_request.trigger_element_selector,
@@ -355,9 +346,6 @@ class AnalysisCore:
                 finished_at=datetime.now(timezone.utc),
                 extension_version=_as_optional_str(data.get("extension_version")),
                 installation_id=_as_optional_str(data.get("installation_id")),
-                user_avoided_ingredients=_as_str_list(
-                    data.get("user_avoided_ingredients")
-                ),
                 trigger_type=_as_optional_str(data.get("trigger_type")),
                 trigger_element_text=_as_optional_str(data.get("trigger_element_text")),
                 trigger_element_selector=_as_optional_str(
@@ -418,9 +406,6 @@ class AnalysisCore:
                 f"Analyzing page from URL: {analysis_request.url} "
                 f"(extension version: {analysis_request.extension_version or 'unknown'}, "
                 f"installation: {analysis_request.installation_id or 'unknown'})"
-            )
-            logger.info(
-                f"User avoided ingredients: {analysis_request.user_avoided_ingredients}"
             )
 
             analysis_result, provider_call, scope = self._run_analysis(analysis_request)

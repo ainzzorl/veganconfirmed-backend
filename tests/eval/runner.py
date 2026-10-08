@@ -256,7 +256,6 @@ def _extract_cases(
         manifest = case["manifest"]
         url = manifest["url"]
         title_override = manifest.get("title")
-        avoided = manifest.get("user_avoided_ingredients")
         record: dict[str, Any] = {
             "id": case["id"],
             "category": manifest.get("category", "uncategorized"),
@@ -282,8 +281,6 @@ def _extract_cases(
                 # against it is exercised here exactly as in production.
                 "page_signals": payload.get("page_signals"),
             }
-            if avoided:
-                request_data["user_avoided_ingredients"] = avoided
             # Optional passthrough of the hints the extension supplies when it
             # has them (`source`, `place_id`, `restaurant_name`, `language`).
             # The Google Maps extractor sends a restaurant_name that reaches the

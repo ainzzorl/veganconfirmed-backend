@@ -33,7 +33,6 @@ def _curl_for(request_data: dict) -> str:
         url=request_data["url"],
         title=request_data["title"],
         content=request_data["content"],
-        user_avoided_ingredients=request_data.get("user_avoided_ingredients"),
     )
     body = json.dumps(payload, indent=2, ensure_ascii=False)
 
@@ -77,7 +76,6 @@ REQUIRED_KEYS = {
     "confidence_level",
     "explanation",
     "summary",
-    "user_avoided_ingredients",
 }
 
 
@@ -198,7 +196,6 @@ def test_analysis_end_to_end(
             len(analysis["summary"].strip()) >= 10
         ), f"summary too short/degenerate: {analysis['summary']!r}"
         assert analysis["explanation"] == analysis["summary"]
-        assert isinstance(analysis["user_avoided_ingredients"], list)
 
         # Semantics: clearly-decidable cases must come out right.
         actual = {key: analysis.get(key) for key in expectation}
@@ -209,25 +206,3 @@ def test_analysis_end_to_end(
             f"  full analysis: {analysis}"
         )
 
-
-def test_user_avoided_ingredients(analysis_core):
-    """A user-avoided ingredient present on the page is reported back."""
-    request_data = _request(
-        url="https://example.com/protein-bar",
-        title="Chocolate Protein Bar",
-        content=(
-            "Chocolate protein bar. Ingredients: oats, cocoa, almonds, honey, "
-            "sea salt. Buy now - $2.49."
-        ),
-        user_avoided_ingredients=["honey"],
-    )
-
-    with _curl_on_failure(request_data):
-        response, status = analysis_core.analyze_page(request_data)
-        assert status == 200, f"unexpected status {status}: {response}"
-
-        analysis = response["analysis"]
-        found = [i.lower() for i in analysis.get("user_avoided_ingredients", [])]
-        assert any(
-            "honey" in i for i in found
-        ), f"expected 'honey' in user_avoided_ingredients: {analysis}"

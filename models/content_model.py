@@ -37,9 +37,6 @@ class PageAnalysisRequest(BaseModel):
         default=None,
         description="Language of the web page (from the <html lang> attribute)",
     )
-    user_avoided_ingredients: Optional[list[str]] = Field(
-        default=[], description="List of ingredients the user wants to avoid"
-    )
     trigger_type: Optional[str] = Field(
         default=None, description="Type of trigger: 'manual' or 'automatic'"
     )

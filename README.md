@@ -61,7 +61,6 @@ Both endpoints are unauthenticated.
   "title": "Page Title",
   "content": "Extracted text/markdown content of the page...",
   "timestamp": "2024-01-01T12:00:00Z",
-  "user_avoided_ingredients": ["palm oil"],
   "place_id": "0x47a84e2e:0x1b9f7c",
   "source": "google_maps_menu_tab",
   "restaurant_name": "Cafe Verde",

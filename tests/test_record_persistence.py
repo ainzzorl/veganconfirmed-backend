@@ -32,7 +32,6 @@ MENU_ITEMS = [
         "reason": "Chickpea patty in flatbread with tahini.",
         "explicit_ingredients": ["chickpea patty", "flatbread", "tahini"],
         "inferred_ingredients": [],
-        "user_avoided_ingredients": [],
     },
     {
         "name": "Mushroom risotto",
@@ -41,7 +40,6 @@ MENU_ITEMS = [
         "reason": "Contains parmesan and butter.",
         "explicit_ingredients": ["mushroom", "parmesan"],
         "inferred_ingredients": ["butter", "rice"],
-        "user_avoided_ingredients": [],
     },
 ]
 
@@ -500,7 +498,7 @@ def test_a_payload_of_the_wrong_shape_is_still_stored():
     core = _core()
 
     _, status_code = core.analyze_page(
-        {"url": 7, "content": None, "user_avoided_ingredients": "palm oil"},
+        {"url": 7, "content": None},
         client_ip="127.0.0.1",
     )
 
@@ -509,7 +507,6 @@ def test_a_payload_of_the_wrong_shape_is_still_stored():
     assert record.status == STATUS_INVALID_REQUEST
     assert record.item_url == "7"
     assert record.content == ""
-    assert record.user_avoided_ingredients is None
 
 
 def test_nothing_is_stored_without_a_database():

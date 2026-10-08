@@ -26,7 +26,6 @@ from typing import Any, Dict, NamedTuple, Optional, Tuple
 from google.cloud import firestore
 
 from models.database_model import ProviderCall, TokenUsage
-from services.menu_prompt import includes_user_avoided
 from services.page_scope import ALL_PAGE_KINDS, describe_scope
 from services.page_prompt import (
     PAGE_CONTENT_TOKEN_LIMIT,
@@ -376,7 +375,6 @@ class DesktopService:
         url: str,
         title: str,
         content: str,
-        user_avoided_ingredients: Optional[list[str]] = None,
         page_kinds: tuple[str, ...] = ALL_PAGE_KINDS,
     ) -> Dict[str, Any]:
         """Build the OpenAI-format request the desktop-server forwards to LM Studio.
@@ -388,7 +386,6 @@ class DesktopService:
             url=url,
             title=title,
             content=content,
-            user_avoided_ingredients=user_avoided_ingredients,
             page_kinds=page_kinds,
         )
         return request
@@ -433,7 +430,6 @@ class DesktopService:
         url: str,
         title: str,
         content: str,
-        user_avoided_ingredients: Optional[list[str]] = None,
         page_kinds: tuple[str, ...] = ALL_PAGE_KINDS,
     ) -> Tuple[Dict[str, Any], bool]:
         """Build the page request, also reporting whether the page had to be cut.
@@ -447,13 +443,9 @@ class DesktopService:
         ``_page_content_budget`` — roughly half again as much page text on the
         default 16384-token window.
         """
-        instructions, has_user_avoided = build_page_instructions(
-            user_avoided_ingredients=user_avoided_ingredients,
-            page_kinds=page_kinds,
-        )
-        instructions += build_page_json_output_instruction(
-            include_user_avoided=has_user_avoided, page_kinds=page_kinds
-        )
+        instructions = build_page_instructions(
+            page_kinds=page_kinds
+        ) + build_page_json_output_instruction(page_kinds=page_kinds)
         system_content = PAGE_SYSTEM_PROMPT + "\n\n" + instructions
 
         reserve = self._completion_reserve(page_kinds)
@@ -484,7 +476,6 @@ class DesktopService:
         url: str,
         title: str,
         content: str,
-        user_avoided_ingredients: Optional[list[str]] = None,
         page_kinds: tuple[str, ...] = ALL_PAGE_KINDS,
     ) -> Tuple[Dict[str, Any], ProviderCall]:
         """Analyze any webpage via the desktop-server.
@@ -513,16 +504,11 @@ class DesktopService:
             url=url,
             title=title,
             content=content,
-            user_avoided_ingredients=user_avoided_ingredients,
             page_kinds=page_kinds,
         )
 
         result = self._run_job(request, url)
-        analysis = normalize_page_analysis(
-            result.payload,
-            include_user_avoided=includes_user_avoided(user_avoided_ingredients),
-            page_kinds=page_kinds,
-        )
+        analysis = normalize_page_analysis(result.payload, page_kinds=page_kinds)
         if truncated:
             add_truncation_warning(analysis)
 

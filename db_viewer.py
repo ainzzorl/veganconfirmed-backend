@@ -90,7 +90,6 @@ DETAIL_GROUPS = (
             "origin_url",
             "title",
             "language",
-            "user_avoided_ingredients",
             "trigger_type",
             "trigger_element_text",
             "trigger_element_selector",
@@ -155,10 +154,6 @@ DISH_COLUMNS = (
     ("explicit_ingredients", "Listed ingredients"),
     ("inferred_ingredients", "Inferred ingredients"),
 )
-
-# The avoid-list column is only shown when a dish actually names something, so
-# the common case (no avoid-list on the request) keeps a narrower table.
-AVOIDED_COLUMN = ("user_avoided_ingredients", "Avoided")
 
 # Labels for fields whose name does not survive ``_label``'s prettifying.
 FIELD_LABELS = {
@@ -662,7 +657,6 @@ DETAIL_TEMPLATE = """
         <td class="reason">{{ dish.reason }}</td>
         <td>{{ dish.explicit_ingredients }}</td>
         <td>{{ dish.inferred_ingredients }}</td>
-        {% if show_avoided %}<td>{{ dish.user_avoided_ingredients }}</td>{% endif %}
       </tr>
       {% endfor %}
     </tbody>
@@ -793,15 +787,9 @@ def _dishes(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "reason": item.get("reason") or "—",
                 "explicit_ingredients": _join(item.get("explicit_ingredients")),
                 "inferred_ingredients": _join(item.get("inferred_ingredients")),
-                "user_avoided_ingredients": _join(item.get("user_avoided_ingredients")),
             }
         )
     return rows
-
-
-def _shows_avoided(dishes: List[Dict[str, Any]]) -> bool:
-    """Whether any dish names an avoid-list ingredient, so the column earns a place."""
-    return any(dish["user_avoided_ingredients"] != "—" for dish in dishes)
 
 
 def _verdict_tally(doc: Dict[str, Any]) -> List[Any]:
@@ -991,7 +979,6 @@ def make_blueprint(firestore_service, local_only: bool = True) -> Blueprint:
 
         content = doc.get("content") or ""
         dishes = _dishes(doc)
-        show_avoided = _shows_avoided(dishes)
 
         return render_template_string(
             DETAIL_TEMPLATE,
@@ -1001,8 +988,7 @@ def make_blueprint(firestore_service, local_only: bool = True) -> Blueprint:
             doc=doc,
             groups=_detail_groups(doc),
             dishes=dishes,
-            dish_columns=DISH_COLUMNS + ((AVOIDED_COLUMN,) if show_avoided else ()),
-            show_avoided=show_avoided,
+            dish_columns=DISH_COLUMNS,
             tally=_verdict_tally(doc),
             job=job,
             job_ref=f"{jobs_collection_name()}/{job_id}" if job_id else "",

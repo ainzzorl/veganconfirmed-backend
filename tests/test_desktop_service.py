@@ -85,7 +85,6 @@ def test_the_prompt_fits_the_window_it_is_sent_to(make_service):
         url="https://example.com/menu",
         title="The Olive Branch",
         content=_MENU,
-        user_avoided_ingredients=["palm oil"],
     )
 
     assert truncated is True

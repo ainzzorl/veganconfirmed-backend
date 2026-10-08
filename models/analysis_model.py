@@ -53,8 +53,6 @@ class MenuItem(BaseModel):
     inferred_ingredients: list[str] = []
     reason: str = ""
     verdict: ItemVerdict = "unclear"
-    # Present only when the request carried an avoid-list.
-    user_avoided_ingredients: Optional[list[str]] = None
 
 
 class ShoppingItemAnalysis(BaseModel):
@@ -94,8 +92,6 @@ class PageAnalysis(BaseModel):
 
     page_kind: PageKind = "other"
     summary: str = ""
-    # The product answer; a menu reports its avoid-list hits per dish instead.
-    user_avoided_ingredients: list[str] = []
     shopping_item: Optional[ShoppingItemAnalysis] = None
     menu: Optional[MenuAnalysis] = None
 
@@ -134,7 +130,6 @@ class PageAnalysis(BaseModel):
         return cls(
             page_kind=page_kind,
             summary=analysis.get("summary", ""),
-            user_avoided_ingredients=analysis.get("user_avoided_ingredients") or [],
             shopping_item=shopping_item,
             menu=menu,
         )

@@ -129,7 +129,6 @@ class DishResult:
     # so the report shows it next to the reason.
     explicit_ingredients: list[str] = field(default_factory=list)
     inferred_ingredients: list[str] = field(default_factory=list)
-    avoided_ingredients: list[str] = field(default_factory=list)
 
     @property
     def found(self) -> bool:
@@ -153,7 +152,6 @@ class DishResult:
             "reason": self.reason,
             "explicit_ingredients": self.explicit_ingredients,
             "inferred_ingredients": self.inferred_ingredients,
-            "avoided_ingredients": self.avoided_ingredients,
         }
 
 
@@ -171,7 +169,6 @@ class ExtraDish:
     reason: Optional[str] = None
     explicit_ingredients: list[str] = field(default_factory=list)
     inferred_ingredients: list[str] = field(default_factory=list)
-    avoided_ingredients: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -180,7 +177,6 @@ class ExtraDish:
             "reason": self.reason,
             "explicit_ingredients": self.explicit_ingredients,
             "inferred_ingredients": self.inferred_ingredients,
-            "avoided_ingredients": self.avoided_ingredients,
         }
 
 
@@ -228,11 +224,7 @@ class MenuResult:
 
 
 def _ingredients(item: Optional[dict[str, Any]], key: str) -> list[str]:
-    """Read one of an item's ingredient lists, tolerating it being absent.
-
-    ``user_avoided_ingredients`` is only in the schema when the case supplies an
-    avoid-list, and a model can still return null for any of them.
-    """
+    """Read one of an item's ingredient lists, tolerating it being absent or null."""
     if not item:
         return []
     return [str(v) for v in (item.get(key) or [])]
@@ -283,7 +275,6 @@ def score_menu(expect_menu: dict[str, Any], analysis: dict[str, Any]) -> MenuRes
             reason=item.get("reason"),
             explicit_ingredients=_ingredients(item, "explicit_ingredients"),
             inferred_ingredients=_ingredients(item, "inferred_ingredients"),
-            avoided_ingredients=_ingredients(item, "user_avoided_ingredients"),
         )
         for item in extras
     ]
@@ -302,7 +293,6 @@ def score_menu(expect_menu: dict[str, Any], analysis: dict[str, Any]) -> MenuRes
             reason=actual.get("reason") if actual else None,
             explicit_ingredients=_ingredients(actual, "explicit_ingredients"),
             inferred_ingredients=_ingredients(actual, "inferred_ingredients"),
-            avoided_ingredients=_ingredients(actual, "user_avoided_ingredients"),
         )
         result.dishes.append(dish)
 

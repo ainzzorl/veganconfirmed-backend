@@ -382,8 +382,8 @@ def test_a_decision_says_which_rule_made_it(kwargs, rule):
 
 
 def test_the_unused_branch_is_gone_from_the_instructions():
-    item, _ = build_page_instructions(page_kinds=ITEM_OR_OTHER)
-    menu, _ = build_page_instructions(page_kinds=MENU_OR_OTHER)
+    item = build_page_instructions(page_kinds=ITEM_OR_OTHER)
+    menu = build_page_instructions(page_kinds=MENU_OR_OTHER)
 
     assert "restaurant_menu" not in item
     assert "vegan_friendliness" not in item
@@ -397,7 +397,7 @@ def test_the_unused_branch_is_gone_from_the_instructions():
 
 def test_the_item_scope_tells_the_model_where_menus_go():
     """Pruning removes the branch, so "other" has to be named as its home."""
-    instructions, _ = build_page_instructions(page_kinds=ITEM_OR_OTHER)
+    instructions = build_page_instructions(page_kinds=ITEM_OR_OTHER)
     assert "restaurant menu" in instructions
     assert 'is "other" here' in instructions
 
@@ -406,8 +406,8 @@ def test_the_item_scope_tells_the_model_where_menus_go():
     "builder", [build_openai_page_schema, build_gemini_page_schema]
 )
 def test_the_schema_carries_only_the_branch_in_scope(builder):
-    item = builder(False, ITEM_OR_OTHER)
-    menu = builder(False, MENU_OR_OTHER)
+    item = builder(ITEM_OR_OTHER)
+    menu = builder(MENU_OR_OTHER)
 
     assert item["properties"]["page_kind"]["enum"] == ["shopping_item", "other"]
     assert menu["properties"]["page_kind"]["enum"] == ["restaurant_menu", "other"]
@@ -426,14 +426,14 @@ def test_the_schema_carries_only_the_branch_in_scope(builder):
 
 
 def test_the_page_kind_description_names_only_what_the_enum_offers():
-    schema = build_openai_page_schema(False, ITEM_OR_OTHER)
+    schema = build_openai_page_schema(ITEM_OR_OTHER)
     assert "restaurant_menu" not in schema["properties"]["page_kind"]["description"]
 
 
 def test_the_local_json_instruction_follows_the_schema():
     """The local path has no constrained decoding; this list is all it gets."""
-    instruction = build_page_json_output_instruction(False, ITEM_OR_OTHER)
-    schema = build_openai_page_schema(False, ITEM_OR_OTHER)
+    instruction = build_page_json_output_instruction(ITEM_OR_OTHER)
+    schema = build_openai_page_schema(ITEM_OR_OTHER)
 
     for field in schema["required"]:
         assert f"- {field} (" in instruction
@@ -443,9 +443,9 @@ def test_the_local_json_instruction_follows_the_schema():
 
 def test_a_narrowed_scope_shortens_the_prompt():
     """The point of the exercise: the freed tokens go to the page itself."""
-    full, _ = build_page_instructions()
-    item, _ = build_page_instructions(page_kinds=ITEM_OR_OTHER)
-    menu, _ = build_page_instructions(page_kinds=MENU_OR_OTHER)
+    full = build_page_instructions()
+    item = build_page_instructions(page_kinds=ITEM_OR_OTHER)
+    menu = build_page_instructions(page_kinds=MENU_OR_OTHER)
 
     assert len(item) < len(full)
     assert len(menu) < len(full)
@@ -463,7 +463,6 @@ def test_a_scoped_out_kind_is_not_honored():
     """A menu verdict from a schema with no menu fields would be an empty menu."""
     analysis = normalize_page_analysis(
         {"page_kind": "restaurant_menu", "summary": "s"},
-        include_user_avoided=False,
         page_kinds=ITEM_OR_OTHER,
     )
 
@@ -478,7 +477,8 @@ def test_a_scoped_out_kind_is_not_honored():
 # whichever branch was pruned — a missing key here breaks every installed
 # extension. See models.analysis_model.LEGACY_ITEM_ALIASES and
 # LEGACY_PROSE_ALIAS (`explanation`, which is no longer asked for or stored and
-# comes back as a copy of `summary`).
+# comes back as a copy of `summary`). It also reads `user_avoided_ingredients`,
+# but guards every use of it, so that one is no longer sent.
 _LEGACY_1_0_4_KEYS = (
     "is_shopping_item",
     "is_vegan",
@@ -487,7 +487,6 @@ _LEGACY_1_0_4_KEYS = (
     "confidence_level",
     "summary",
     "explanation",
-    "user_avoided_ingredients",
 )
 
 
@@ -496,7 +495,6 @@ def test_the_released_extension_still_finds_what_it_reads(scope):
     """The compat guarantee: 1.0.4 reads these flat, whatever was pruned."""
     analysis = normalize_page_analysis(
         {"page_kind": "other", "summary": "s"},
-        include_user_avoided=False,
         page_kinds=scope,
     )
     response = PageAnalysis.from_flat(analysis).to_response_dict()
@@ -522,7 +520,6 @@ def test_an_item_verdict_survives_the_item_scope():
             "summary": "Leather wallet. Made of leather.",
             "confidence_level": "high",
         },
-        include_user_avoided=False,
         page_kinds=ITEM_OR_OTHER,
     )
 

@@ -111,9 +111,6 @@ _SHARED_FIELD_DESCRIPTIONS = {
         "other": '"other" for anything else',
     },
     "summary": "A complete one-to-two sentence plain-language summary of what this page holds and what it means for a vegan, and the only prose the reader is shown. For a shopping item, open directly with the vegan (and cruelty-free, if applicable) verdict and its reason, without any preamble about the page itself. For a restaurant menu, say roughly how many vegan options there are and where they are. For any other kind of page, say briefly what the page is. Never empty or a placeholder.",
-    "user_avoided_ingredients": analysis_prompt.FIELD_DESCRIPTIONS[
-        "user_avoided_ingredients"
-    ],
 }
 
 # The classification section of the prompt, per scope.
@@ -220,14 +217,11 @@ def _required_fields(page_kinds: tuple[str, ...]) -> list[str]:
     )
 
 
-def build_page_instructions(
-    user_avoided_ingredients: list[str] | None = None,
-    page_kinds: tuple[str, ...] = ALL_PAGE_KINDS,
-) -> tuple[str, bool]:
+def build_page_instructions(page_kinds: tuple[str, ...] = ALL_PAGE_KINDS) -> str:
     """Build the static page-analysis instructions (the task, not the page data).
 
     These describe *how* to analyze and are identical across requests (modulo
-    the optional user-avoided-ingredients clause and the scope), so callers
+    the scope), so callers
     place them in the system role and pass the per-request page data separately
     via ``build_page_content``.
 
@@ -236,28 +230,23 @@ def build_page_instructions(
     frees the local model's context for the page itself, and it removes the
     "leave the other branch null" bookkeeping that a small model has to hold
     while it works.
-
-    Returns ``(instructions, has_user_avoided)``, where ``has_user_avoided``
-    indicates whether the user_avoided_ingredients fields belong in the
-    response schema.
     """
     scope = _scope(page_kinds)
-    has_user_avoided = menu_prompt.includes_user_avoided(user_avoided_ingredients)
 
     kind_lines = [_KIND_DESCRIPTIONS[kind] for kind in scope if kind != "other"]
     kind_lines.append(_OTHER_DESCRIPTIONS[scope])
 
     branches = []
     if "shopping_item" in scope:
-        branches.append(analysis_prompt.build_item_branch(user_avoided_ingredients))
+        branches.append(analysis_prompt.build_item_branch())
     if "restaurant_menu" in scope:
-        branches.append(menu_prompt.build_menu_branch(user_avoided_ingredients))
+        branches.append(menu_prompt.build_menu_branch())
 
     kinds = "\n".join(kind_lines)
     tiebreaks = "\n".join(_TIEBREAKS[scope])
     branch_text = "\n\n".join(branches)
 
-    instructions = f"""Analyze the provided webpage content for a vegan reader.
+    return f"""Analyze the provided webpage content for a vegan reader.
 
 FIRST: Classify the page by setting page_kind to exactly one of:
 {kinds}
@@ -276,8 +265,6 @@ IF page_kind IS "other":
 ALWAYS, for every page_kind:
 - Answer the fields in the order they are listed in the response format. The evidence and the summary come before the verdicts they support, and each verdict must agree with the reasoning above it — never contradict your own summary.
 - summary is answered for every page_kind. Never leave it empty or fill it with placeholder text."""
-
-    return instructions, has_user_avoided
 
 
 def estimate_tokens(text: str) -> int:
@@ -365,7 +352,7 @@ def _describe_type(prop: dict) -> str:
 
 
 def build_page_json_output_instruction(
-    include_user_avoided: bool, page_kinds: tuple[str, ...] = ALL_PAGE_KINDS
+    page_kinds: tuple[str, ...] = ALL_PAGE_KINDS,
 ) -> str:
     """Build a prompt suffix instructing the model to emit the JSON directly.
 
@@ -379,7 +366,7 @@ def build_page_json_output_instruction(
     this stays in sync with the single source of truth — including the scope,
     which decides which branch's fields the schema carries at all.
     """
-    schema = build_openai_page_schema(include_user_avoided, page_kinds)
+    schema = build_openai_page_schema(page_kinds)
     lines = []
     for field in schema["required"]:
         prop = schema["properties"][field]
@@ -405,7 +392,6 @@ def build_page_json_output_instruction(
 
 
 def _build_schema(
-    include_user_avoided: bool,
     nullable_flavor: bool,
     page_kinds: tuple[str, ...] = ALL_PAGE_KINDS,
 ) -> dict:
@@ -432,9 +418,7 @@ def _build_schema(
     if "shopping_item" in scope:
         properties.update(analysis_prompt.item_properties(nullable_flavor))
     if "restaurant_menu" in scope:
-        properties.update(
-            menu_prompt.menu_properties(include_user_avoided, nullable_flavor)
-        )
+        properties.update(menu_prompt.menu_properties(nullable_flavor))
     properties.update(
         {
             "summary": {
@@ -444,44 +428,28 @@ def _build_schema(
         }
     )
 
-    required = _required_fields(scope)
-
-    if include_user_avoided:
-        properties["user_avoided_ingredients"] = {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": _SHARED_FIELD_DESCRIPTIONS["user_avoided_ingredients"],
-        }
-        required.append("user_avoided_ingredients")
-
     schema = {
         "type": "object",
         "properties": properties,
-        "required": required,
+        "required": _required_fields(scope),
     }
     if not nullable_flavor:
         schema["additionalProperties"] = False
     return schema
 
 
-def build_gemini_page_schema(
-    include_user_avoided: bool, page_kinds: tuple[str, ...] = ALL_PAGE_KINDS
-) -> dict:
+def build_gemini_page_schema(page_kinds: tuple[str, ...] = ALL_PAGE_KINDS) -> dict:
     """Build the Gemini-flavored response schema (nullable via ``nullable``)."""
-    return _build_schema(include_user_avoided, True, page_kinds)
+    return _build_schema(True, page_kinds)
 
 
-def build_openai_page_schema(
-    include_user_avoided: bool, page_kinds: tuple[str, ...] = ALL_PAGE_KINDS
-) -> dict:
+def build_openai_page_schema(page_kinds: tuple[str, ...] = ALL_PAGE_KINDS) -> dict:
     """Build the OpenAI/JSON-Schema-flavored response schema (``type`` unions)."""
-    return _build_schema(include_user_avoided, False, page_kinds)
+    return _build_schema(False, page_kinds)
 
 
 def normalize_page_analysis(
-    analysis: dict,
-    include_user_avoided: bool,
-    page_kinds: tuple[str, ...] = ALL_PAGE_KINDS,
+    analysis: dict, page_kinds: tuple[str, ...] = ALL_PAGE_KINDS
 ) -> dict:
     """Fill in optional fields so both providers return the same shape.
 
@@ -505,27 +473,13 @@ def normalize_page_analysis(
     is_menu = page_kind == "restaurant_menu"
 
     analysis_prompt.normalize_item_fields(analysis, applies=is_item)
-    menu_prompt.normalize_menu_fields(
-        analysis, applies=is_menu, include_user_avoided=include_user_avoided
-    )
+    menu_prompt.normalize_menu_fields(analysis, applies=is_menu)
 
     analysis.setdefault("summary", "")
-
-    # A menu carries its avoid-list hits per dish; the top-level field is the
-    # product answer, and stays present either way for a consistent shape.
-    analysis.setdefault("user_avoided_ingredients", [])
-    if not isinstance(analysis["user_avoided_ingredients"], list):
-        analysis["user_avoided_ingredients"] = []
 
     return analysis
 
 
 def error_analysis(message: str) -> dict:
     """The shape returned when analysis could not be run at all."""
-    return normalize_page_analysis(
-        {
-            "page_kind": "other",
-            "summary": message,
-        },
-        include_user_avoided=False,
-    )
+    return normalize_page_analysis({"page_kind": "other", "summary": message})

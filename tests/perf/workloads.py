@@ -233,7 +233,6 @@ def real_prompts(
             url=case["url"],
             title=case["title"],
             content=case["content"],
-            user_avoided_ingredients=case.get("user_avoided_ingredients"),
             page_kinds=kinds,
         )
         prompts.append(
