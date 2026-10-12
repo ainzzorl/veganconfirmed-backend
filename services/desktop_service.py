@@ -272,7 +272,6 @@ class DesktopService:
             os.getenv("LMS_CONTEXT_LENGTH", str(DEFAULT_CONTEXT_LENGTH))
         )
         self.max_tokens = int(os.getenv("LMS_MAX_TOKENS", "8192"))
-        self.temperature = float(os.getenv("LMS_TEMPERATURE", "0.4"))
         # Reasoning tokens come out of the same completion cap as the JSON, so
         # raising this spends part of ``max_tokens`` on thinking.
         self.reasoning_effort = configured_reasoning_effort()
@@ -341,7 +340,8 @@ class DesktopService:
             "model": self.model_name,
             "messages": messages,
             "max_tokens": self._completion_cap(messages, reserve),
-            "temperature": self.temperature,
+            # Always 0, as for Gemini: the same page should get the same verdict.
+            "temperature": 0,
         }
         request["reasoning_effort"] = self.reasoning_effort
         return request
